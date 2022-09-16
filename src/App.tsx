@@ -41,7 +41,9 @@ function App() {
           firstColumn={"weight"}
           svgHeight={400}
           svgWidth={650}
-          barColor={"#574bd6"}
+          dotColor={"black"}
+          // dotHoverColor={"green"}
+          dotRadius={10}
           scatterPlotId={1}
         />
       </div>

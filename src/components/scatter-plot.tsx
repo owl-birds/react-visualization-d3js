@@ -26,7 +26,8 @@ interface Props {
   barsWrapperHeight?: number;
   secondColumn: string; // required // categoric column must be unique
   firstColumn: string; // required
-  barColor?: string;
+  dotColor?: string;
+  dotHoverColor?: string;
   chartTitle?: string;
   tickPadding?: number;
   dotRadius?: number;
@@ -69,7 +70,10 @@ const ScatterPlot = (props: Props) => {
   const barsWrapperHeight: number = props.barsWrapperHeight
     ? props.barsWrapperHeight
     : svgHeight - 100;
-  const barColor: string = props.barColor ? props.barColor : "teal";
+  const dotColor: string = props.dotColor ? props.dotColor : "teal";
+  const dotHoverColor: string = props.dotHoverColor
+    ? props.dotHoverColor
+    : "red";
   const chartTitle = props.chartTitle ? props.chartTitle : "CHART'S TITLE";
   const tickPadding: number = props.tickPadding ? props.tickPadding : 10;
   const dotRadius: number = props.dotRadius ? props.dotRadius : 5;
@@ -170,13 +174,13 @@ const ScatterPlot = (props: Props) => {
           .attr("opacity", dotOpacity)
           .attr("cx", (row) => horizontalScale(row[secondColumn]))
           .attr("cy", (row) => verticalScale(row[firstColumn]))
-          .attr("fill", barColor)
+          .attr("fill", dotColor)
           .on("mouseover", (element, row) => {
             tooltip
               .style("visibility", "visible")
               .text(`${row[secondColumn]}, ${row[firstColumn]}`);
             // .text(element.currentTarget.__data__[numericColumn]);
-            return select(element.currentTarget).attr("fill", "red");
+            return select(element.currentTarget).attr("fill", dotHoverColor);
           })
           .on("mousemove", (element) => {
             return tooltip
@@ -185,7 +189,7 @@ const ScatterPlot = (props: Props) => {
           })
           .on("mouseout", (element) => {
             tooltip.style("visibility", "hidden");
-            return select(element.currentTarget).attr("fill", barColor);
+            return select(element.currentTarget).attr("fill", dotColor);
           });
         // dots // to show the data when we hovering on the dot
         //   .append("title")
