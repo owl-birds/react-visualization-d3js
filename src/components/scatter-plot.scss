@@ -1,0 +1,20 @@
+.scatter-plot {
+  display: grid;
+  justify-items: center;
+  h4 {
+    text-align: center;
+  }
+  .chart-wrapper {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: auto auto;
+    .vertical {
+      width: fit-content;
+      align-self: center;
+    }
+  }
+  .horizontal {
+    width: fit-content;
+    justify-self: center;
+  }
+}

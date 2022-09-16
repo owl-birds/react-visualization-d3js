@@ -1,0 +1,32 @@
+div,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+section {
+  margin: 0;
+  padding: 0;
+}
+.simple-bar {
+  display: grid;
+  width: fit-content;
+  h4 {
+    text-align: center;
+  }
+  .chart-wrapper {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: auto auto;
+    .vertical {
+      width: fit-content;
+      align-self: center;
+    }
+  }
+  .horizontal {
+    width: fit-content;
+    justify-self: center;
+  }
+}
