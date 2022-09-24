@@ -1,0 +1,15 @@
+.line-chart {
+  display: grid;
+  justify-items: center;
+  h4 {
+    text-align: center;
+  }
+  .chart-wrapper {
+    width: fit-content;
+    display: grid;
+    grid-template-columns: auto auto;
+    .vertical {
+      align-self: center;
+    }
+  }
+}

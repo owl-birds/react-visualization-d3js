@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import "./scatter-plot.scss";
-
+import "./line-chart.scss";
 import {
   axisLeft,
   axisBottom,
@@ -13,42 +12,47 @@ import {
   scaleBand,
   Axis,
   NumberValue,
+  scaleTime,
   ScaleBand,
   ScaleLinear,
+  ScaleTime,
   extent,
+  line,
+  curveBasis,
 } from "d3";
-
+//
+interface Row {}
 interface Props {
-  data: Array<any>; // required
+  readonly data: Array<any>;
+  readonly secondColumn: string;
+  readonly firstColumn: string;
   svgWidth?: number;
   svgHeight?: number;
-  chartWrapperWidth?: number;
   chartWrapperHeight?: number;
-  secondColumn: string; // required // categoric column must be unique
-  firstColumn: string; // required
-  dotColor?: string;
-  dotHoverColor?: string;
+  chartWrapperWidth?: number;
   chartTitle?: string;
-  tickPadding?: number;
-  dotRadius?: number;
-  dotOpacity?: number;
+  lineColor?: string;
+  lineWidth?: number;
   domainMinMultiplier?: number;
   domainMaxMultiplier?: number;
-  scatterPlotId: number;
-  fontSizeHover?: string;
+  tickPadding?: number;
+  isTickSize?: boolean;
+  isDot?: boolean;
+  dotRadius?: number;
+  dotOpacity?: number;
+  dotColor?: string;
 }
 
-const ScatterPlot = (props: Props) => {
-  //   setting up react stuffs
-  const [data, setData] = useState<undefined | any[]>(props.data);
+const LineChart = (props: Props) => {
   const [selection, setSelection] = useState<null | Selection<
     SVGSVGElement | null,
     unknown,
     null,
     undefined
   >>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+  const svgRef = useRef<null | SVGSVGElement>(null);
   // VARS
+  const [data, setData] = useState(props.data);
   const { secondColumn, firstColumn } = props;
   const MAX_VALUE_FIRST: number = data
     ? max(data, (row) => row[firstColumn])
@@ -62,44 +66,45 @@ const ScatterPlot = (props: Props) => {
   const MIN_VALUE_SECOND: number = data
     ? min(data, (row) => row[secondColumn])
     : 0;
-  // chart's related
+  // chart's stuffs
   const svgWidth: number = props.svgWidth ? props.svgWidth : 700;
   const svgHeight: number = props.svgHeight ? props.svgHeight : 500;
-  const chartWrapperWidth: number = props.chartWrapperWidth
-    ? props.chartWrapperWidth
-    : svgWidth - 100;
+  const chartTitle: string = props.chartTitle
+    ? props.chartTitle
+    : "CHART'S TITLE, LINE CHART";
+  const lineColor: string = props.lineColor ? props.lineColor : "#000";
+  const lineWidth: number = props.lineWidth ? props.lineWidth : 1;
   const chartWrapperHeight: number = props.chartWrapperHeight
     ? props.chartWrapperHeight
     : svgHeight - 100;
-  const dotColor: string = props.dotColor ? props.dotColor : "teal";
-  const dotHoverColor: string = props.dotHoverColor
-    ? props.dotHoverColor
-    : "red";
-  const chartTitle = props.chartTitle ? props.chartTitle : "CHART'S TITLE";
-  const tickPadding: number = props.tickPadding ? props.tickPadding : 10;
-  const dotRadius: number = props.dotRadius ? props.dotRadius : 5;
-  const dotOpacity: number = props.dotOpacity ? props.dotOpacity : 0.4;
+  const chartWrapperWidth: number = props.chartWrapperWidth
+    ? props.chartWrapperWidth
+    : svgWidth - 100;
   const domainMinMultiplier: number = props.domainMinMultiplier
     ? props.domainMinMultiplier
     : 0.01;
   const domainMaxMultiplier: number = props.domainMaxMultiplier
     ? props.domainMaxMultiplier
     : 0.01;
-  const scatterPlotId: number = props.scatterPlotId ? props.scatterPlotId : 1;
-  const fontSizeHover: string = props.fontSizeHover
-    ? props.fontSizeHover
-    : "1rem";
-  //
+  const tickPadding: number = props.tickPadding ? props.tickPadding : 10;
+  const isTickSize: boolean =
+    props.isTickSize !== undefined ? props.isTickSize : false;
+  const isDot: boolean = props.isDot !== undefined ? props.isDot : false;
+  const dotRadius: number = props.dotRadius ? props.dotRadius : 5;
+  const dotColor: string = props.dotColor ? props.dotColor : "teal";
+  const dotOpacity: number = props.dotOpacity ? props.dotOpacity : 0.4;
 
+  //
   // SCALE
   let horizontalScale: ScaleLinear<number, number, never>;
+  // just edit code above to change if ur horizontal
+  // axis have date type variable
   let verticalScale: ScaleLinear<number, number, never>;
   // AXIS
-  let horizontalAxis: Axis<NumberValue>;
+  let horizontalAxis: Axis<NumberValue | Date>;
   let verticalAxis: Axis<NumberValue>;
-  //
   if (data) {
-    // setting up the scale
+    // coinfigure Scale
     horizontalScale = scaleLinear()
       .domain([
         MIN_VALUE_SECOND - MIN_VALUE_SECOND * domainMinMultiplier,
@@ -114,40 +119,23 @@ const ScatterPlot = (props: Props) => {
       ])
       .range([chartWrapperHeight, 0])
       .nice();
-    //   setting up the axis
-    horizontalAxis = axisBottom(horizontalScale)
-      .tickSize(0)
-      .tickPadding(tickPadding);
+    // configure Axis
     verticalAxis = axisLeft(verticalScale)
-      // .ticks(8)
-      .tickSize(0)
-      .tickPadding(tickPadding);
+      .tickPadding(tickPadding)
+      .tickSize(isTickSize ? -chartWrapperWidth : 0);
+    horizontalAxis = axisBottom(horizontalScale)
+      .tickPadding(tickPadding)
+      .tickSize(isTickSize ? -chartWrapperHeight : 0);
   }
 
-  // manipulating the svg
+  // manipulating svg using d3js
   useEffect(() => {
     if (!selection) {
       setSelection(() => select(svgRef.current));
     } else {
-      // creating tooltip
-      const tooltip = select(`#scatter-plot-${scatterPlotId}`) // in the fuiture maybe will break something cause classname
-        .append("div")
-        .style("position", "absolute")
-        .style("z-index", "10") //An element with greater stack order is always in front of an element with a lower stack order.
-        .style("visibility", "hidden")
-        .style("background", "#4d4d4d")
-        .style("padding", "5px")
-        .style("font-weight", "bold")
-        .style("color", "#fff")
-        .style("font-size", fontSizeHover)
-        .text("tooltip template"); // is this best practice?
-
-      // setting up the svg
-      selection
-        .attr("width", svgWidth)
-        .attr("height", svgHeight)
-        .attr("class", "chart");
-      // configuring chart box
+      // configuring svg
+      selection.attr("width", svgWidth).attr("height", svgHeight);
+      // configuring chart wrapper
       const chartBoxG: Selection<SVGGElement, unknown, null, undefined> =
         selection
           .append("g")
@@ -167,10 +155,27 @@ const ScatterPlot = (props: Props) => {
           .attr("transform", `translate(0, ${chartWrapperHeight})`);
       const verticalAxisG: Selection<SVGGElement, unknown, null, undefined> =
         chartBoxG.append("g").attr("class", "vertical-axis").call(verticalAxis);
-      // MAKING THE SCATTERED DOTS or PLOTTING
+      // dots
       const plotWrapperG: Selection<SVGGElement, unknown, null, undefined> =
         chartBoxG.append("g").attr("class", "plot-wrapper");
-      if (data) {
+
+      // LINE GENERATOR
+      const lineGenerator = line()
+        .x((row) => horizontalScale(row[secondColumn as unknown as number]))
+        .y((row) => verticalScale(row[firstColumn as unknown as number]));
+      // .curve(curveBasis);
+      // drawing the line
+      const pathElement = plotWrapperG
+        .append("path")
+        .attr("d", lineGenerator(data));
+      // beautiify
+      pathElement
+        .attr("fill", "none")
+        .attr("stroke", lineColor)
+        .attr("stroke-width", lineWidth)
+        // smoothing the line
+        .attr("stroke-linejoin", "round");
+      if (isDot) {
         const dots = plotWrapperG
           .selectAll("circle")
           .data(data)
@@ -180,32 +185,15 @@ const ScatterPlot = (props: Props) => {
           .attr("opacity", dotOpacity)
           .attr("cx", (row) => horizontalScale(row[secondColumn]))
           .attr("cy", (row) => verticalScale(row[firstColumn]))
-          .attr("fill", dotColor)
-          .on("mouseover", (element, row) => {
-            dots.style("cursor", "pointer");
-            tooltip
-              .style("visibility", "visible")
-              .text(`${row[secondColumn]}, ${row[firstColumn]}`);
-            // .text(element.currentTarget.__data__[numericColumn]);
-            return select(element.currentTarget).attr("fill", dotHoverColor);
-          })
-          .on("mousemove", (element) => {
-            return tooltip
-              .style("top", `${element.pageY + 10}px`)
-              .style("left", `${element.clientX + 10}px`);
-          })
-          .on("mouseout", (element) => {
-            tooltip.style("visibility", "hidden");
-            return select(element.currentTarget).attr("fill", dotColor);
-          });
-        // dots // to show the data when we hovering on the dot
-        //   .append("title")
-        //   .text((row) => `${row[secondColumn]}, ${row[firstColumn]}`);
+          .attr("fill", dotColor);
+        dots
+          .append("title")
+          .text((row) => `${row[secondColumn]}, ${row[firstColumn]}`);
       }
     }
   }, [selection]);
   return (
-    <div className="scatter-plot" id={`scatter-plot-${scatterPlotId}`}>
+    <div className="line-chart">
       <h4>{chartTitle}</h4>
       <section className="chart-wrapper">
         <span className="vertical">{firstColumn}</span>
@@ -216,4 +204,4 @@ const ScatterPlot = (props: Props) => {
   );
 };
 
-export default ScatterPlot;
+export default LineChart;

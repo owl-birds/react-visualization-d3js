@@ -45,6 +45,9 @@ interface Props {
   isVerticalAxis?: boolean;
   valueTopPaddingBottom?: number;
   barId: number;
+  fontSizeHover?: string;
+  barPaddingInner?: number;
+  barPaddingOuter?: number;
 }
 
 const SimpleBar = (props: Props): JSX.Element => {
@@ -102,6 +105,15 @@ const SimpleBar = (props: Props): JSX.Element => {
   const isVerticalAxis: boolean =
     props.isVerticalAxis !== undefined ? props.isVerticalAxis : true;
   const barId: number = props.barId ? props.barId : 1;
+  const fontSizeHover: string = props.fontSizeHover
+    ? props.fontSizeHover
+    : "1rem";
+  const barPaddingInner: number = props.barPaddingInner
+    ? props.barPaddingInner
+    : 0;
+  const barPaddingOuter: number = props.barPaddingOuter
+    ? props.barPaddingOuter
+    : 0;
   //
 
   if (isHorizontal && data) {
@@ -120,8 +132,8 @@ const SimpleBar = (props: Props): JSX.Element => {
     horizontalScale = scaleBand()
       .domain(data.map((row) => row[categoricColumn]))
       .range([0, barsWrapperWidth])
-      .paddingInner(0.3)
-      .paddingOuter(0.1);
+      .paddingInner(barPaddingInner)
+      .paddingOuter(barPaddingOuter);
     verticalScale = scaleLinear()
       .domain([0, MAX_VALUE + paddingTopBar])
       .range([barsWrapperHeight, 0]);
@@ -148,6 +160,7 @@ const SimpleBar = (props: Props): JSX.Element => {
           .style("background", "#4d4d4d")
           .style("padding", "5px")
           .style("font-weight", "bold")
+          .style("font-size", fontSizeHover)
           .style("color", "#fff")
           .text("tooltip template"); // is this best practice?
         // configuring svg
@@ -212,6 +225,7 @@ const SimpleBar = (props: Props): JSX.Element => {
           .attr("y", (row) => verticalScale(row[numericColumn]))
           .attr("fill", barColor)
           .on("mouseover", (element, row) => {
+            barsWrapperG.style("cursor", "pointer");
             tooltip.style("visibility", "visible").text(row[numericColumn]);
             // .text(element.currentTarget.__data__[numericColumn]);
             return select(element.currentTarget).attr("fill", barColorHover);
@@ -270,8 +284,8 @@ const SimpleBar = (props: Props): JSX.Element => {
     verticalScale = scaleBand()
       .domain(data.map((row) => row[categoricColumn]))
       .range([0, barsWrapperHeight])
-      .paddingInner(0.3)
-      .paddingOuter(0.1);
+      .paddingInner(barPaddingInner)
+      .paddingOuter(barPaddingOuter);
     // AXIS
     horizontalAxis = axisBottom(horizontalScale)
       .ticks(8)
@@ -295,6 +309,7 @@ const SimpleBar = (props: Props): JSX.Element => {
           .style("background", "#4d4d4d")
           .style("padding", "5px")
           .style("font-weight", "bold")
+          .style("font-size", fontSizeHover)
           .style("color", "#fff")
           .text("tooltip template"); // is this best practice?
         // configuring svg
@@ -356,6 +371,7 @@ const SimpleBar = (props: Props): JSX.Element => {
           .attr("width", (row) => horizontalScale(row[numericColumn]))
           .attr("fill", barColor)
           .on("mouseover", (element, row) => {
+            barsWrapperG.style("cursor", "pointer");
             tooltip.style("visibility", "visible").text(row[numericColumn]);
             return select(element.currentTarget).attr("fill", barColorHover);
           })
